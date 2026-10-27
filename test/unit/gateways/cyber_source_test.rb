@@ -851,6 +851,36 @@ class CyberSourceTest < Test::Unit::TestCase
     assert response.test?
   end
 
+  def test_reference_purchase_sends_subscription_id_from_authorization
+    stub_comms do
+      @gateway.purchase(@amount, '1000;2240165983980008402433;AhjzbwSP5cIx;store;;USD;7123456789012345678901;credit_card', @options)
+    end.check_request do |_endpoint, data, _headers|
+      assert_match %r(<subscriptionID>7123456789012345678901</subscriptionID>), data
+    end.respond_with(successful_purchase_response)
+  end
+
+  def test_purchase_with_bare_subscription_id
+    response = stub_comms do
+      @gateway.purchase(@amount, '7123456789012345678901', @options)
+    end.check_request do |_endpoint, data, _headers|
+      assert_match %r(<subscriptionID>7123456789012345678901</subscriptionID>), data
+      assert_xml_valid_to_xsd(data)
+    end.respond_with(successful_purchase_response)
+
+    assert_success response
+  end
+
+  def test_unstore_with_bare_subscription_id
+    response = stub_comms do
+      @gateway.unstore('7123456789012345678901', order_id: generate_unique_id)
+    end.check_request do |_endpoint, data, _headers|
+      assert_match %r(<subscriptionID>7123456789012345678901</subscriptionID>), data
+      assert_xml_valid_to_xsd(data)
+    end.respond_with(successful_delete_subscription_response)
+
+    assert_success response
+  end
+
   def test_avs_result
     @gateway.expects(:ssl_post).returns(successful_purchase_response)
 

@@ -1087,8 +1087,9 @@ module ActiveMerchant # :nodoc:
 
         xml.tag! 'recurringSubscriptionInfo' do
           if reference
-            subscription_id = reference.split(';')[6]
-            xml.tag! 'subscriptionID',  subscription_id
+            # Also accept the bare ID, as returned in params['subscriptionID']
+            subscription_id = reference.include?(';') ? reference.split(';')[6] : reference
+            xml.tag! 'subscriptionID', subscription_id
           end
 
           xml.tag! 'status',            options[:subscription][:status] if options[:subscription][:status]
